@@ -33,7 +33,6 @@ class TheBellBridge extends BridgeAbstract
         'limit' => self::LIMIT + [
             // default number of articles in API itself - 20
             'defaultValue' => 20,
-            'required'     => true,
         ],
     ]];
 
