@@ -67,7 +67,7 @@ class APNewsBridge extends BridgeAbstract
         }
 
         $screen = $data['data']['Screen'];
-        $filterCategory = $screen['category'] ?? null;
+        $filterCategory = $path === '/' ? null : ($screen['category'] ?? null);
         $main = $screen['main'] ?? [];
         $seen = [];
 
