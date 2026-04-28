@@ -48,8 +48,6 @@ class AssociatedPressNewsBridge extends BridgeAbstract
         ],
     ];
 
-    const CACHE_TIMEOUT = 1; // TODO: remove
-
     const GRAPHQL_ENDPOINT = 'https://apnews.com/graphql/delivery/ap/v1';
     const PERSISTED_QUERY_HASH = '3bc305abbf62e9e632403a74cc86dc1cba51156d2313f09b3779efec51fc3acb';
 
@@ -107,6 +105,8 @@ class AssociatedPressNewsBridge extends BridgeAbstract
         $screen = $data['data']['Screen'];
         $isCustom = $this->queriedContext === 'Custom Category';
         $screenCategory = $screen['category'] ?? null;
+	// All, photography and custom categories will contain multiple
+	// categories in articles, so don't filter them
         $filterCategory = ($isCustom || $path === '/' || $path === '/photography') ? null : $screenCategory;
         $main = $screen['main'] ?? [];
         $seen = [];
@@ -231,5 +231,4 @@ class AssociatedPressNewsBridge extends BridgeAbstract
         }
         return null;
     }
-
 }
