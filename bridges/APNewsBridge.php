@@ -152,30 +152,48 @@ class APNewsBridge extends BridgeAbstract
         }
 
         foreach ($this->items as &$item) {
-            $imageUrl = $item['_imageUrl'];
-            unset($item['_imageUrl']);
+            $this->collectPageData($item);
+        }
+    }
 
-            $html = getSimpleHTMLDOM($item['uri']);
-            $body = $html->find('div.RichTextStoryBody.RichTextBody', 0);
-            if ($body) {
-                foreach ($body->find('div') as $div) {
-                    $div->outertext = '';
-                }
-                $item['content'] = $body->innertext;
+    private function collectPageData(array &$item): void
+    {
+        $imageUrl = $item['_imageUrl'];
+        unset($item['_imageUrl']);
+
+        $html = getSimpleHTMLDOM($item['uri']);
+        $body = $html->find('div.RichTextStoryBody.RichTextBody', 0);
+        if ($body) {
+            foreach ($body->find('div') as $div) {
+                $div->outertext = '';
             }
+            $item['content'] = $body->innertext;
+        }
 
-            if ($imageUrl) {
-                $altMeta = $html->find('meta[property="og:image:alt"]', 0);
-                $alt = $altMeta ? htmlspecialchars($altMeta->content, ENT_QUOTES) : '';
-                $item['content'] = '<img src="' . $imageUrl . '" alt="' . $alt . '">' . $item['content'];
+        $isVideo = str_contains(parse_url($item['uri'], PHP_URL_PATH), '/video/');
+        if ($isVideo) {
+            $ldScript = $html->find('script[type="application/ld+json"]', 0);
+            $videoUrl = null;
+            if ($ldScript) {
+                $ld = json_decode($ldScript->innertext, true);
+                $videoUrl = $ld['mainEntity']['contentUrl'] ?? null;
             }
+            if ($videoUrl) {
+                $descMeta = $html->find('meta[property="og:description"]', 0);
+                $desc = $descMeta ? '<p>' . htmlspecialchars($descMeta->content, ENT_QUOTES) . '</p>' : '';
+                $item['content'] = '<video controls src="' . $videoUrl . '"></video>' . $desc;
+            }
+        } elseif ($imageUrl) {
+            $altMeta = $html->find('meta[property="og:image:alt"]', 0);
+            $alt = $altMeta ? htmlspecialchars($altMeta->content, ENT_QUOTES) : '';
+            $item['content'] = '<img src="' . $imageUrl . '" alt="' . $alt . '">' . $item['content'];
+        }
 
-            $authorsDiv = $html->find('div.Page-authors', 0);
-            if ($authorsDiv) {
-                $names = array_map(fn($a) => $a->plaintext, $authorsDiv->find('a'));
-                if ($names) {
-                    $item['author'] = implode(', ', $names);
-                }
+        $authorsDiv = $html->find('div.Page-authors', 0);
+        if ($authorsDiv) {
+            $names = array_map(fn($a) => $a->plaintext, $authorsDiv->find('a'));
+            if ($names) {
+                $item['author'] = implode(', ', $names);
             }
         }
     }
