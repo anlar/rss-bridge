@@ -164,8 +164,10 @@ class APNewsBridge extends BridgeAbstract
         $html = getSimpleHTMLDOM($item['uri']);
         $body = $html->find('div.RichTextStoryBody.RichTextBody', 0);
         if ($body) {
-            foreach ($body->find('div.FreeStar, div.Advertisement') as $div) {
-                $div->outertext = '';
+            foreach ($body->children() as $child) {
+                if ($child->tag === 'div' && ($child->class ?? '') !== 'Enhancement') {
+                    $child->outertext = '';
+                }
             }
             $item['content'] = $body->innertext;
         }
