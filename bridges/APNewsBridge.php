@@ -7,9 +7,9 @@ class APNewsBridge extends BridgeAbstract
     const DESCRIPTION = 'Returns articles from AP News sections via GraphQL API';
     const MAINTAINER = 'anlar';
     const PARAMETERS = [
-        [
+        'Standard' => [
             'category' => [
-                'name' => 'Category',
+                'name' => 'Standard Category',
                 'type' => 'list',
                 'values' => [
                     'All'              => '/',
@@ -31,7 +31,15 @@ class APNewsBridge extends BridgeAbstract
                 ],
                 'defaultValue' => '/',
             ],
-        ]
+        ],
+        'Custom Category' => [
+            'category' => [
+                'name' => 'Category path',
+                'type' => 'text',
+                'required' => true,
+                'exampleValue' => '/hub/animals',
+            ],
+        ],
     ];
 
     const CACHE_TIMEOUT = 1; // TODO: remove
@@ -71,7 +79,9 @@ class APNewsBridge extends BridgeAbstract
         }
 
         $screen = $data['data']['Screen'];
-        $filterCategory = $path === '/' ? null : ($screen['category'] ?? null);
+        $isCustom = $this->queriedContext === 'Custom Category';
+        $screenCategory = $screen['category'] ?? null;
+        $filterCategory = ($isCustom || $path === '/') ? null : $screenCategory;
         $main = $screen['main'] ?? [];
         $seen = [];
 
@@ -110,9 +120,12 @@ class APNewsBridge extends BridgeAbstract
                         $item['timestamp'] = (int) ($stamp / 1000);
                     }
 
-                    $category = $promo['category'] ?? null;
-                    if ($category) {
-                        $item['categories'] = [$category];
+                    $categories = array_values(array_unique(array_filter([
+                        $promo['category'] ?? null,
+                        $isCustom ? $screenCategory : null,
+                    ])));
+                    if ($categories) {
+                        $item['categories'] = $categories;
                     }
 
                     $this->items[] = $item;
