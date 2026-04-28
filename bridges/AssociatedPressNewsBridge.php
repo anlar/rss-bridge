@@ -48,6 +48,12 @@ class AssociatedPressNewsBridge extends BridgeAbstract
         ],
     ];
 
+    const TEST_DETECT_PARAMETERS = [
+        'https://apnews.com/' => ['context' => 'Standard Category', 'category' => '/'],
+        'https://apnews.com/health' => ['context' => 'Standard Category', 'category' => '/health'],
+        'https://apnews.com/hub/animals' => ['context' => 'Custom Category', 'category' => '/hub/animals'],
+    ];
+
     const GRAPHQL_ENDPOINT = 'https://apnews.com/graphql/delivery/ap/v1';
     const PERSISTED_QUERY_HASH = '3bc305abbf62e9e632403a74cc86dc1cba51156d2313f09b3779efec51fc3acb';
 
