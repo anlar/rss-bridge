@@ -66,57 +66,56 @@ class APNewsBridge extends BridgeAbstract
             throw new \Exception('Unexpected API response: Screen data missing');
         }
 
-        $main = $data['data']['Screen']['main'] ?? [];
+        $screen = $data['data']['Screen'];
+        $filterCategory = $screen['category'] ?? null;
+        $main = $screen['main'] ?? [];
         $seen = [];
 
         foreach ($main as $container) {
-            $items = $this->extractItems($container);
-            foreach ($items as $promo) {
-                $id = $promo['id'] ?? null;
-                $url = $promo['url'] ?? null;
-
-                if (!$url || !$id || isset($seen[$id])) {
+            if (($container['__typename'] ?? null) !== 'ColumnContainer') {
+                continue;
+            }
+            foreach ($container['columns'] ?? [] as $column) {
+                if (($column['__typename'] ?? null) !== 'PageListModule') {
                     continue;
                 }
-                $seen[$id] = true;
+                foreach ($column['items'] ?? [] as $promo) {
+                    if (($promo['__typename'] ?? null) !== 'PagePromo') {
+                        continue;
+                    }
+                    if ($filterCategory && ($promo['category'] ?? null) !== $filterCategory) {
+                        continue;
+                    }
 
-                $item = [];
-                $item['uid'] = $id;
-                $item['title'] = $promo['title'] ?? '';
-                $item['content'] = $promo['description'] ?? '';
-                $item['uri'] = $url;
+                    $id = $promo['id'] ?? null;
+                    $url = $promo['url'] ?? null;
 
-                $stamp = $promo['publishDateStamp'] ?? null;
-                if ($stamp !== null) {
-                    $item['timestamp'] = (int) ($stamp / 1000);
+                    if (!$url || !$id || isset($seen[$id])) {
+                        continue;
+                    }
+                    $seen[$id] = true;
+
+                    $item = [];
+                    $item['uid'] = $id;
+                    $item['title'] = $promo['title'] ?? '';
+                    $item['content'] = $promo['description'] ?? '';
+                    $item['uri'] = $url;
+
+                    $stamp = $promo['publishDateStamp'] ?? null;
+                    if ($stamp !== null) {
+                        $item['timestamp'] = (int) ($stamp / 1000);
+                    }
+
+                    $category = $promo['category'] ?? null;
+                    if ($category) {
+                        $item['categories'] = [$category];
+                    }
+
+                    $this->items[] = $item;
                 }
-
-                $category = $promo['category'] ?? null;
-                if ($category) {
-                    $item['categories'] = [$category];
-                }
-
-                $this->items[] = $item;
             }
         }
 
         usort($this->items, fn($a, $b) => ($b['timestamp'] ?? 0) <=> ($a['timestamp'] ?? 0));
-    }
-
-    private function extractItems(array $node): array
-    {
-        $items = [];
-
-        if (isset($node['items']) && is_array($node['items'])) {
-            $items = array_merge($items, $node['items']);
-        }
-
-        if (isset($node['columns']) && is_array($node['columns'])) {
-            foreach ($node['columns'] as $column) {
-                $items = array_merge($items, $this->extractItems($column));
-            }
-        }
-
-        return $items;
     }
 }
