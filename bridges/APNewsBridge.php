@@ -165,7 +165,17 @@ class APNewsBridge extends BridgeAbstract
             }
 
             if ($imageUrl) {
-                $item['content'] = '<img src="' . $imageUrl . '">' . $item['content'];
+                $altMeta = $html->find('meta[property="og:image:alt"]', 0);
+                $alt = $altMeta ? htmlspecialchars($altMeta->content, ENT_QUOTES) : '';
+                $item['content'] = '<img src="' . $imageUrl . '" alt="' . $alt . '">' . $item['content'];
+            }
+
+            $authorsDiv = $html->find('div.Page-authors', 0);
+            if ($authorsDiv) {
+                $names = array_map(fn($a) => $a->plaintext, $authorsDiv->find('a'));
+                if ($names) {
+                    $item['author'] = implode(', ', $names);
+                }
             }
         }
     }
