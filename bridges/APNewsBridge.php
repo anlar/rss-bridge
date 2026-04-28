@@ -8,12 +8,24 @@ class APNewsBridge extends BridgeAbstract
     const MAINTAINER = 'anlar';
     const PARAMETERS = [
         [
-            'path' => [
-                'name' => 'Section path',
-                'type' => 'text',
-                'required' => true,
-                'exampleValue' => '/sports',
-                'title' => 'Section path, e.g. /sports, /politics, /world-news',
+            'category' => [
+                'name' => 'Category',
+                'type' => 'list',
+                'values' => [
+                    'All'              => '/',
+                    'Business'         => '/business',
+                    'Climate'          => '/climate-and-environment',
+                    'Entertainment'    => '/entertainment',
+                    'Health'           => '/health',
+                    'Lifestyle'        => '/lifestyle',
+                    'Politics'         => '/politics',
+                    'Science'          => '/science',
+                    'Sports'           => '/sports',
+                    'Today in History' => '/today-in-history',
+                    'U.S. News'        => '/us-news',
+                    'World News'       => '/world-news',
+                ],
+                'defaultValue' => '/',
             ],
         ]
     ];
@@ -25,8 +37,8 @@ class APNewsBridge extends BridgeAbstract
 
     public function getURI()
     {
-        $path = $this->getInput('path');
-        if ($path) {
+        $path = $this->getInput('category');
+        if ($path && $path !== '/') {
             return self::URI . ltrim($path, '/');
         }
         return parent::getURI();
@@ -34,14 +46,11 @@ class APNewsBridge extends BridgeAbstract
 
     public function collectData()
     {
-        $path = $this->getInput('path');
-        if (!str_starts_with($path, '/')) {
-            $path = '/' . $path;
-        }
+        $path = $this->getInput('category') ?: '/';
 
         $url = self::GRAPHQL_ENDPOINT . '?' . http_build_query([
             'operationName' => 'ContentPageQuery',
-            'variables' => json_encode(['path' => $path]),
+            'variables' => json_encode(['path' => $path], JSON_UNESCAPED_SLASHES),
             'extensions' => json_encode([
                 'persistedQuery' => [
                     'version' => 1,
