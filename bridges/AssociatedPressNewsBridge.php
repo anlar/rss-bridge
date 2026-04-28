@@ -1,6 +1,6 @@
 <?php
 
-class APNewsBridge extends BridgeAbstract
+class AssociatedPressNewsBridge extends BridgeAbstract
 {
     const NAME = 'Associated Press News';
     const URI = 'https://apnews.com/';
