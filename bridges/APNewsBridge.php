@@ -53,6 +53,22 @@ class APNewsBridge extends BridgeAbstract
     const GRAPHQL_ENDPOINT = 'https://apnews.com/graphql/delivery/ap/v1';
     const PERSISTED_QUERY_HASH = '3bc305abbf62e9e632403a74cc86dc1cba51156d2313f09b3779efec51fc3acb';
 
+    public function detectParameters($url)
+    {
+        $path = parse_url($url, PHP_URL_PATH) ?: '/';
+
+        $standardPaths = array_values(self::PARAMETERS['Standard Category']['category']['values']);
+        if (in_array($path, $standardPaths, true)) {
+            return ['context' => 'Standard Category', 'category' => $path];
+        }
+
+        if (str_starts_with($url, self::URI)) {
+            return ['context' => 'Custom Category', 'category' => $path];
+        }
+
+        return null;
+    }
+
     public function getURI()
     {
         $path = $this->getInput('category');
