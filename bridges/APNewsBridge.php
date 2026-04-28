@@ -74,6 +74,10 @@ class APNewsBridge extends BridgeAbstract
         $json = getContents($url);
         $data = json_decode($json, true);
 
+        if (array_key_exists('Screen', $data['data'] ?? []) && $data['data']['Screen'] === null) {
+            throw new \Exception('Category not found: ' . $path);
+        }
+
         if (empty($data['data']['Screen'])) {
             throw new \Exception('Unexpected API response: Screen data missing');
         }
