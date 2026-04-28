@@ -124,6 +124,7 @@ class APNewsBridge extends BridgeAbstract
                     $item['title'] = $promo['title'] ?? '';
                     $item['content'] = $promo['description'] ?? '';
                     $item['uri'] = $url;
+                    $item['_imageUrl'] = $this->extractImageUrl($promo['media'] ?? []);
 
                     $stamp = $promo['publishDateStamp'] ?? null;
                     if ($stamp !== null) {
@@ -151,6 +152,9 @@ class APNewsBridge extends BridgeAbstract
         }
 
         foreach ($this->items as &$item) {
+            $imageUrl = $item['_imageUrl'];
+            unset($item['_imageUrl']);
+
             $html = getSimpleHTMLDOM($item['uri']);
             $body = $html->find('div.RichTextStoryBody.RichTextBody', 0);
             if ($body) {
@@ -159,6 +163,26 @@ class APNewsBridge extends BridgeAbstract
                 }
                 $item['content'] = $body->innertext;
             }
+
+            if ($imageUrl) {
+                $item['content'] = '<img src="' . $imageUrl . '">' . $item['content'];
+            }
         }
     }
+
+    private function extractImageUrl(array $media): ?string
+    {
+        foreach ($media as $m) {
+            if (($m['__typename'] ?? null) !== 'Image') {
+                continue;
+            }
+            foreach ($m['image']['entries'] ?? [] as $entry) {
+                if ($entry['key'] === 'src') {
+                    return $entry['value'];
+                }
+            }
+        }
+        return null;
+    }
+
 }
