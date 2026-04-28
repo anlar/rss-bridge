@@ -91,7 +91,7 @@ class APNewsBridge extends BridgeAbstract
         $screen = $data['data']['Screen'];
         $isCustom = $this->queriedContext === 'Custom Category';
         $screenCategory = $screen['category'] ?? null;
-        $filterCategory = ($isCustom || $path === '/') ? null : $screenCategory;
+        $filterCategory = ($isCustom || $path === '/' || $path === '/photography') ? null : $screenCategory;
         $main = $screen['main'] ?? [];
         $seen = [];
 
@@ -164,7 +164,7 @@ class APNewsBridge extends BridgeAbstract
         $html = getSimpleHTMLDOM($item['uri']);
         $body = $html->find('div.RichTextStoryBody.RichTextBody', 0);
         if ($body) {
-            foreach ($body->find('div') as $div) {
+            foreach ($body->find('div.FreeStar, div.Advertisement') as $div) {
                 $div->outertext = '';
             }
             $item['content'] = $body->innertext;
@@ -191,7 +191,8 @@ class APNewsBridge extends BridgeAbstract
 
         $authorsDiv = $html->find('div.Page-authors', 0);
         if ($authorsDiv) {
-            $names = array_map(fn($a) => $a->plaintext, $authorsDiv->find('a'));
+            $nodes = $authorsDiv->find('a, span.Link');
+            $names = array_map(fn($n) => $n->plaintext, $nodes);
             if ($names) {
                 $item['author'] = implode(', ', $names);
             }
