@@ -31,6 +31,9 @@ class APNewsBridge extends BridgeAbstract
                 ],
                 'defaultValue' => '/',
             ],
+	    'limit' => self::LIMIT + [
+                'defaultValue' => 10,
+            ],
         ],
         'Custom Category' => [
             'category' => [
@@ -38,6 +41,9 @@ class APNewsBridge extends BridgeAbstract
                 'type' => 'text',
                 'required' => true,
                 'exampleValue' => '/hub/animals',
+            ],
+	    'limit' => self::LIMIT + [
+                'defaultValue' => 10,
             ],
         ],
     ];
@@ -138,5 +144,21 @@ class APNewsBridge extends BridgeAbstract
         }
 
         usort($this->items, fn($a, $b) => ($b['timestamp'] ?? 0) <=> ($a['timestamp'] ?? 0));
+
+        $limit = (int) $this->getInput('limit');
+        if ($limit > 0) {
+            $this->items = array_slice($this->items, 0, $limit);
+        }
+
+        foreach ($this->items as &$item) {
+            $html = getSimpleHTMLDOM($item['uri']);
+            $body = $html->find('div.RichTextStoryBody.RichTextBody', 0);
+            if ($body) {
+                foreach ($body->find('div') as $div) {
+                    $div->outertext = '';
+                }
+                $item['content'] = $body->innertext;
+            }
+        }
     }
 }
