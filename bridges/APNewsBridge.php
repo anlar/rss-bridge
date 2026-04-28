@@ -7,9 +7,9 @@ class APNewsBridge extends BridgeAbstract
     const DESCRIPTION = 'Returns articles from AP News sections via GraphQL API';
     const MAINTAINER = 'anlar';
     const PARAMETERS = [
-        'Standard' => [
+        'Standard Category' => [
             'category' => [
-                'name' => 'Standard Category',
+                'name' => 'Category',
                 'type' => 'list',
                 'values' => [
                     'All'              => '/',
@@ -34,7 +34,7 @@ class APNewsBridge extends BridgeAbstract
         ],
         'Custom Category' => [
             'category' => [
-                'name' => 'Category path',
+                'name' => 'Path',
                 'type' => 'text',
                 'required' => true,
                 'exampleValue' => '/hub/animals',
