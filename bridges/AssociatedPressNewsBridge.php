@@ -31,7 +31,7 @@ class AssociatedPressNewsBridge extends BridgeAbstract
                 ],
                 'defaultValue' => '/',
             ],
-	    'limit' => self::LIMIT + [
+            'limit' => self::LIMIT + [
                 'defaultValue' => 10,
             ],
         ],
@@ -42,7 +42,7 @@ class AssociatedPressNewsBridge extends BridgeAbstract
                 'required' => true,
                 'exampleValue' => '/hub/animals',
             ],
-	    'limit' => self::LIMIT + [
+            'limit' => self::LIMIT + [
                 'defaultValue' => 10,
             ],
         ],
@@ -111,8 +111,8 @@ class AssociatedPressNewsBridge extends BridgeAbstract
         $screen = $data['data']['Screen'];
         $isCustom = $this->queriedContext === 'Custom Category';
         $screenCategory = $screen['category'] ?? null;
-	// All, photography and custom categories will contain multiple
-	// categories in articles, so don't filter them
+        // All, photography and custom categories will contain multiple
+        // categories in articles, so don't filter them
         $filterCategory = ($isCustom || $path === '/' || $path === '/photography') ? null : $screenCategory;
         $main = $screen['main'] ?? [];
         $seen = [];
