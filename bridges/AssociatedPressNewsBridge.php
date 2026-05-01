@@ -184,15 +184,6 @@ class AssociatedPressNewsBridge extends BridgeAbstract
         unset($item['_imageUrl']);
 
         $html = getSimpleHTMLDOM($item['uri']);
-        $body = $html->find('div.RichTextStoryBody.RichTextBody', 0);
-        if ($body) {
-            foreach ($body->children() as $child) {
-                if ($child->tag === 'div' && ($child->class ?? '') !== 'Enhancement') {
-                    $child->outertext = '';
-                }
-            }
-            $item['content'] = $body->innertext;
-        }
 
         $isVideo = str_contains(parse_url($item['uri'], PHP_URL_PATH), '/video/');
         if ($isVideo) {
@@ -207,10 +198,25 @@ class AssociatedPressNewsBridge extends BridgeAbstract
                 $desc = $descMeta ? '<p>' . htmlspecialchars($descMeta->content, ENT_QUOTES) . '</p>' : '';
                 $item['content'] = '<video controls src="' . $videoUrl . '"></video>' . $desc;
             }
-        } elseif ($imageUrl) {
-            $altMeta = $html->find('meta[property="og:image:alt"]', 0);
-            $alt = $altMeta ? htmlspecialchars($altMeta->content, ENT_QUOTES) : '';
-            $item['content'] = '<img src="' . $imageUrl . '" alt="' . $alt . '">' . $item['content'];
+        } else {
+            $carouselHtml = $this->buildCarouselHtml($html);
+            if ($carouselHtml) {
+                $item['content'] = $carouselHtml;
+            } elseif ($imageUrl) {
+                $altMeta = $html->find('meta[property="og:image:alt"]', 0);
+                $alt = $altMeta ? htmlspecialchars($altMeta->content, ENT_QUOTES) : '';
+                $item['content'] = '<img src="' . $imageUrl . '" alt="' . $alt . '">';
+            }
+
+            $body = $html->find('div.RichTextStoryBody.RichTextBody', 0);
+            if ($body) {
+                foreach ($body->children() as $child) {
+                    if ($child->tag === 'div' && ($child->class ?? '') !== 'Enhancement') {
+                        $child->outertext = '';
+                    }
+                }
+                $item['content'] = $item['content'] . $body->innertext;
+            }
         }
 
         $authorsDiv = $html->find('div.Page-authors', 0);
@@ -221,6 +227,41 @@ class AssociatedPressNewsBridge extends BridgeAbstract
                 $item['author'] = implode(', ', $names);
             }
         }
+    }
+
+    private function buildCarouselHtml($html): string
+    {
+        $carouselSlides = $html->find('div.Carousel-slides', 0);
+        $slides = $carouselSlides ? $carouselSlides->find('div[class="CarouselSlide-media imageSlide"]') : [];
+
+        $out = '';
+        foreach ($slides as $i => $slide) {
+            $img = $slide->find('picture img', 0); // used to get picture title
+            $source = $slide->find('picture source', 0); // use to get picture URL
+
+            $srcset = null;
+            foreach ($source->attr as $attrName => $attrValue) {
+                if (str_contains($attrName, 'srcset')) {
+                    $srcset = $attrValue;
+                    break;
+                }
+            }
+
+            $srcsetEntries = explode(',', $srcset);
+            $lastEntry = trim(end($srcsetEntries));
+            $src = trim(explode(' ', $lastEntry)[0]);
+            $caption = $img->alt ?? '';
+
+            if ($src) {
+                $out .= '<figure>';
+                $out .= '<img src="' . htmlspecialchars($src, ENT_QUOTES) . '">';
+                if ($caption) {
+                    $out .= '<figcaption>' . htmlspecialchars($caption, ENT_QUOTES) . '</figcaption>';
+                }
+                $out .= '</figure>';
+            }
+        }
+        return $out;
     }
 
     private function extractImageUrl(array $media): ?string
